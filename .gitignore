@@ -1,0 +1,41 @@
+# Build outputs
+bin/
+obj/
+out/
+artifacts/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+*.rsuser
+*.pdb
+
+# Test results
+TestResults/
+coverage*/
+*.trx
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+.nuget/
+
+# Rider / ReSharper
+.idea/
+*.sln.iml
+*.DotSettings.user
+
+# Local development
+*.log
+*.pid
+*.tmp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
