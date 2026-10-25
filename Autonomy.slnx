@@ -1,2 +1,7 @@
 <Solution>
+  <Project Path="Autonomy.Api/Autonomy.Api.csproj" />
+  <Project Path="Autonomy.Application/Autonomy.Application.csproj" />
+  <Project Path="Autonomy.Domain/Autonomy.Domain.csproj" />
+  <Project Path="Autonomy.Infrastructure/Autonomy.Infrastructure.csproj" />
+  <Project Path="Autonomy.Persistence/Autonomy.Persistence.csproj" />
 </Solution>
