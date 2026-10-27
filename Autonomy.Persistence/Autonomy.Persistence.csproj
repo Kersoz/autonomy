@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Autonomy.Application\Autonomy.Application.csproj" />
     <ProjectReference Include="..\Autonomy.Domain\Autonomy.Domain.csproj" />
   </ItemGroup>
 

@@ -1,7 +1,10 @@
 
 using System.Text;
+using Autonomy.Application.Abstractions.Persistence;
+using Autonomy.Application.Interfaces;
 using Autonomy.Persistence.Context;
 using Autonomy.Persistence.Identity;
+using Autonomy.Persistence.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +25,9 @@ if (string.IsNullOrWhiteSpace(connectionString))
 
 builder.Services.AddDbContext<AutonomyDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 // ASP.NET Core Identity
 builder.Services
