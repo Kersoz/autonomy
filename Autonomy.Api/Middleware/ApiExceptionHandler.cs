@@ -16,6 +16,8 @@ public sealed class ApiExceptionHandler(
         {
             InvalidDeliveryTransitionException =>
                 (StatusCodes.Status409Conflict, "Invalid delivery transition"),
+            AssignmentConflictException =>
+                (StatusCodes.Status409Conflict, "Assignment conflict"),
             UnauthorizedAccessException =>
                 (StatusCodes.Status403Forbidden, "Forbidden"),
             KeyNotFoundException =>
@@ -45,6 +47,8 @@ public sealed class ApiExceptionHandler(
                 StatusCodes.Status400BadRequest => "The request was invalid.",
                 StatusCodes.Status403Forbidden => "The request is not allowed.",
                 StatusCodes.Status404NotFound => "The requested resource was not found.",
+                StatusCodes.Status409Conflict when exception is AssignmentConflictException =>
+                    "The delivery or courier no longer satisfies assignment constraints.",
                 StatusCodes.Status409Conflict => "The delivery cannot transition from its current state.",
                 _ => "The server could not complete the request."
             },

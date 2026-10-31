@@ -1,13 +1,16 @@
 
 using System.Text;
 using System.Text.Json.Serialization;
+using Autonomy.Api.BackgroundJobs;
 using Autonomy.Api.Authorization;
 using Autonomy.Api.Middleware;
 using Autonomy.Api.Services;
 using Autonomy.Api.Validation;
 using Autonomy.Application.Abstractions.Persistence;
 using Autonomy.Application.Features.Couriers;
+using Autonomy.Application.Features.Assignments;
 using Autonomy.Application.Features.Deliveries;
+using Autonomy.Application.Features.JobOffers;
 using Autonomy.Application.Interfaces;
 using Autonomy.Application.Mappings;
 using FluentValidation;
@@ -80,8 +83,13 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 builder.Services.AddScoped<ICourierRepository, CourierRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
+builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+builder.Services.AddScoped<IJobOfferRepository, JobOfferRepository>();
 builder.Services.AddScoped<ICourierService, CourierService>();
+builder.Services.AddScoped<IAssignmentService, AssignmentApplicationService>();
 builder.Services.AddScoped<IDeliveryService, DeliveryApplicationService>();
+builder.Services.AddScoped<IJobOfferService, JobOfferApplicationService>();
+builder.Services.AddHostedService<JobOfferExpirationService>();
 builder.Services.AddAutoMapper(
     _ => { },
     typeof(CourierMappingProfile).Assembly);

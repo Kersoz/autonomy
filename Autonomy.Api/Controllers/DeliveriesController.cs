@@ -75,6 +75,40 @@ public sealed class DeliveriesController(IDeliveryService deliveryService) : Con
         return delivery is null ? NotFound() : Ok(ToResponse(delivery));
     }
 
+    [HttpPost("{id:guid}/reassign")]
+    [Authorize(Policy = AuthorizationPolicies.DeliveryDispatch)]
+    [ProducesResponseType<DeliveryResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<DeliveryResponse>> Reassign(
+        Guid id,
+        [FromBody] AssignDeliveryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var delivery = await deliveryService.ReassignCourierAsync(
+            id,
+            request.CourierId,
+            cancellationToken);
+        return delivery is null ? NotFound() : Ok(ToResponse(delivery));
+    }
+
+    [HttpPost("{id:guid}/release-assignment")]
+    [Authorize(Policy = AuthorizationPolicies.DeliveryDispatch)]
+    [ProducesResponseType<DeliveryResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<DeliveryResponse>> ReleaseAssignment(
+        Guid id,
+        [FromBody] ReleaseAssignmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var delivery = await deliveryService.ReleaseAssignmentAsync(
+            id,
+            request.Reason,
+            cancellationToken);
+        return delivery is null ? NotFound() : Ok(ToResponse(delivery));
+    }
+
     [HttpPost("{id:guid}/pickup")]
     [Authorize(Policy = AuthorizationPolicies.CourierOperations)]
     [ProducesResponseType<DeliveryResponse>(StatusCodes.Status200OK)]

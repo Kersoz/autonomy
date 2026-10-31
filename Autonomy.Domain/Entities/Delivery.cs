@@ -110,6 +110,34 @@ public class Delivery : BaseEntity
         FirstAssignmentAt ??= DateTime.UtcNow;
     }
 
+    public void Reassign(Guid courierId)
+    {
+        if (courierId == Guid.Empty)
+        {
+            throw new ArgumentException("A courier ID is required.", nameof(courierId));
+        }
+
+        if (Status != DeliveryStatus.Assigned)
+        {
+            throw new InvalidDeliveryTransitionException(Status, DeliveryStatus.Assigned);
+        }
+
+        AssignedCourierId = courierId;
+    }
+
+    public void ReleaseAssignment()
+    {
+        TransitionTo(DeliveryStatus.PendingAssignment, DeliveryStatus.Assigned);
+        AssignedCourierId = null;
+        ClearActiveAssignment();
+    }
+
+    public void ClearActiveAssignment()
+    {
+        ActiveAssignment = null;
+        ActiveAssignmentId = null;
+    }
+
     public void Pickup()
     {
         TransitionTo(

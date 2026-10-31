@@ -3,6 +3,7 @@
 @fleetId = 00000000-0000-0000-0000-000000000000
 @merchantId = 00000000-0000-0000-0000-000000000000
 @courierId = 00000000-0000-0000-0000-000000000000
+@offerId = 00000000-0000-0000-0000-000000000000
 @accessToken = replace-with-access-token
 
 ### Create delivery
@@ -55,6 +56,32 @@ Content-Type: application/json
 ### Fail delivery
 POST {{baseUrl}}/api/v1/deliveries/{{deliveryId}}/fail
 Authorization: Bearer {{accessToken}}
+
+### Offer delivery to courier
+POST {{baseUrl}}/api/v1/deliveries/{{deliveryId}}/offers
+Authorization: ******
+Content-Type: application/json
+
+{
+  "courierId": "{{courierId}}"
+}
+
+### Accept offer (does not create an assignment)
+POST {{baseUrl}}/api/v1/job-offers/{{offerId}}/accept
+Authorization: ******
+
+### Reject offer
+POST {{baseUrl}}/api/v1/job-offers/{{offerId}}/reject
+Authorization: ******
+Content-Type: application/json
+
+{
+  "reason": "Not available"
+}
+
+### Validate and commit an accepted offer as an assignment
+POST {{baseUrl}}/api/v1/job-offers/{{offerId}}/commit-assignment
+Authorization: ******
 
 ### Retrieve a delivery
 GET {{baseUrl}}/api/v1/deliveries/{{deliveryId}}

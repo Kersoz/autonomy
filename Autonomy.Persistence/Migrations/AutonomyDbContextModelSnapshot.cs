@@ -92,7 +92,10 @@ namespace Autonomy.Persistence.Migrations
 
                     b.HasIndex("CourierId");
 
-                    b.HasIndex("DeliveryId");
+                    b.HasIndex("DeliveryId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_delivery_active_assignment")
+                        .HasFilter("\"Status\" = 1");
 
                     b.HasIndex("FleetId");
 
@@ -173,7 +176,9 @@ namespace Autonomy.Persistence.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Couriers");
+                    b.ToTable("Couriers", t => t.HasCheckConstraint(
+                        "ck_courier_max_simultaneous_deliveries",
+                        "\"MaxSimultaneousDeliveries\" > 0"));
                 });
 
             modelBuilder.Entity("Autonomy.Domain.Entities.CourierAppInstallation", b =>

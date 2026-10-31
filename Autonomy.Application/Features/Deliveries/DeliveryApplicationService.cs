@@ -6,7 +6,8 @@ namespace Autonomy.Application.Features.Deliveries;
 
 public sealed class DeliveryApplicationService(
     IDeliveryRepository deliveryRepository,
-    ITenantContext tenantContext) : IDeliveryService
+    ITenantContext tenantContext,
+    IAssignmentService assignmentService) : IDeliveryService
 {
     public async Task<DeliveryDto> CreateDeliveryAsync(
         CreateDeliveryCommand command,
@@ -68,100 +69,103 @@ public sealed class DeliveryApplicationService(
             return null;
         }
 
-        if (!await deliveryRepository.CourierBelongsToFleetAsync(
-                courierId,
-                delivery.FleetId,
-                cancellationToken))
-        {
-            throw new KeyNotFoundException("The courier was not found in the delivery fleet.");
-        }
-
-        delivery.Assign(courierId);
-        await deliveryRepository.SaveChangesAsync(cancellationToken);
-        return ToDto(delivery);
-    }
-
-    public Task<DeliveryDto?> PickupAsync(
-        Guid deliveryId,
-        CancellationToken cancellationToken = default)
-    {
-        return ChangeAsAssignedCourierAsync(
+        return await assignmentService.AssignCourierAsync(
             deliveryId,
-            delivery => delivery.Pickup(),
+            courierId,
             cancellationToken);
     }
 
-    public Task<DeliveryDto?> CompleteDeliveryAsync(
-        Guid deliveryId,
-        CancellationToken cancellationToken = default)
-    {
-        return ChangeAsAssignedCourierAsync(
-            deliveryId,
-            delivery => delivery.Deliver(tenantContext.UserId?.ToString()),
-            cancellationToken);
-    }
-
-    public Task<DeliveryDto?> CancelDeliveryAsync(
+    public async Task<DeliveryDto?> ReleaseAssignmentAsync(
         Guid deliveryId,
         string reason,
         CancellationToken cancellationToken = default)
     {
-        return ChangeDeliveryAsync(
+        if (await GetAccessibleDeliveryAsync(deliveryId, cancellationToken) is null)
+        {
+            return null;
+        }
+
+        return await assignmentService.ReleaseAssignmentAsync(
             deliveryId,
-            delivery => delivery.Cancel(reason),
+            reason,
             cancellationToken);
     }
 
-    public Task<DeliveryDto?> FailAsync(
+    public async Task<DeliveryDto?> ReassignCourierAsync(
+        Guid deliveryId,
+        Guid courierId,
+        CancellationToken cancellationToken = default)
+    {
+        if (await GetAccessibleDeliveryAsync(deliveryId, cancellationToken) is null)
+        {
+            return null;
+        }
+
+        return await assignmentService.ReassignCourierAsync(
+            deliveryId,
+            courierId,
+            cancellationToken);
+    }
+
+    public async Task<DeliveryDto?> PickupAsync(
         Guid deliveryId,
         CancellationToken cancellationToken = default)
     {
-        return ChangeAsAssignedCourierAsync(
+        if (await GetAccessibleDeliveryAsync(deliveryId, cancellationToken) is null)
+        {
+            return null;
+        }
+
+        return await assignmentService.PickupAsync(
             deliveryId,
-            delivery => delivery.Fail(),
+            tenantContext.UserId,
             cancellationToken);
     }
 
-    private async Task<DeliveryDto?> ChangeAsAssignedCourierAsync(
+    public async Task<DeliveryDto?> CompleteDeliveryAsync(
         Guid deliveryId,
-        Action<Delivery> change,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
-        var delivery = await GetAccessibleDeliveryAsync(deliveryId, cancellationToken);
-        if (delivery is null)
+        if (await GetAccessibleDeliveryAsync(deliveryId, cancellationToken) is null)
         {
             return null;
         }
 
-        if (tenantContext.UserId is not Guid userId
-            || !await deliveryRepository.IsAssignedCourierAsync(
-                deliveryId,
-                userId,
-                cancellationToken))
-        {
-            throw new UnauthorizedAccessException(
-                "Only the courier assigned to this delivery can update its status.");
-        }
-
-        change(delivery);
-        await deliveryRepository.SaveChangesAsync(cancellationToken);
-        return ToDto(delivery);
+        return await assignmentService.CompleteDeliveryAsync(
+            deliveryId,
+            tenantContext.UserId,
+            cancellationToken);
     }
 
-    private async Task<DeliveryDto?> ChangeDeliveryAsync(
+    public async Task<DeliveryDto?> CancelDeliveryAsync(
         Guid deliveryId,
-        Action<Delivery> change,
-        CancellationToken cancellationToken)
+        string reason,
+        CancellationToken cancellationToken = default)
     {
-        var delivery = await GetAccessibleDeliveryAsync(deliveryId, cancellationToken);
-        if (delivery is null)
+        if (await GetAccessibleDeliveryAsync(deliveryId, cancellationToken) is null)
         {
             return null;
         }
 
-        change(delivery);
-        await deliveryRepository.SaveChangesAsync(cancellationToken);
-        return ToDto(delivery);
+        return await assignmentService.CancelDeliveryAsync(
+            deliveryId,
+            reason,
+            cancellationToken);
+    }
+
+    public async Task<DeliveryDto?> FailAsync(
+        Guid deliveryId,
+        CancellationToken cancellationToken = default)
+    {
+        if (await GetAccessibleDeliveryAsync(deliveryId, cancellationToken) is null)
+        {
+            return null;
+        }
+
+        return await assignmentService.FailAsync(
+            deliveryId,
+            tenantContext.UserId,
+            cancellationToken);
     }
 
     private async Task<Delivery?> GetAccessibleDeliveryAsync(

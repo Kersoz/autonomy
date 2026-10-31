@@ -100,6 +100,17 @@ public class AutonomyDbContext
             .WithOne()
             .HasForeignKey<Delivery>(delivery => delivery.ActiveAssignmentId);
 
+        modelBuilder.Entity<Assignment>()
+            .HasIndex(assignment => assignment.DeliveryId)
+            .IsUnique()
+            .HasFilter("\"Status\" = 1")
+            .HasDatabaseName("ux_delivery_active_assignment");
+
+        modelBuilder.Entity<Courier>()
+            .ToTable(table => table.HasCheckConstraint(
+                "ck_courier_max_simultaneous_deliveries",
+                "\"MaxSimultaneousDeliveries\" > 0"));
+
         modelBuilder.Entity<TenantRoleAssignment>(entity =>
         {
             entity.HasKey(assignment => assignment.Id);

@@ -17,6 +17,16 @@ public interface IDeliveryService
         Guid courierId,
         CancellationToken cancellationToken = default);
 
+    Task<DeliveryDto?> ReleaseAssignmentAsync(
+        Guid deliveryId,
+        string reason,
+        CancellationToken cancellationToken = default);
+
+    Task<DeliveryDto?> ReassignCourierAsync(
+        Guid deliveryId,
+        Guid courierId,
+        CancellationToken cancellationToken = default);
+
     Task<DeliveryDto?> PickupAsync(
         Guid deliveryId,
         CancellationToken cancellationToken = default);

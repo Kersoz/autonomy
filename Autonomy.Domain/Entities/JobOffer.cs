@@ -1,5 +1,6 @@
 using Autonomy.Domain.Common;
 using Autonomy.Domain.Enums;
+using Autonomy.Domain.Exceptions;
 
 namespace Autonomy.Domain.Entities;
 
@@ -30,4 +31,35 @@ public class JobOffer : BaseEntity
     public decimal? EstimatedDistanceKm { get; set; }
 
     public int? EstimatedTravelTimeMinutes { get; set; }
+
+    public void Accept(DateTime respondedAt)
+    {
+        EnsurePending();
+        Status = OfferStatus.Accepted;
+        RespondedAt = respondedAt;
+    }
+
+    public void Reject(DateTime respondedAt, string? reason)
+    {
+        EnsurePending();
+        Status = OfferStatus.Rejected;
+        RespondedAt = respondedAt;
+        RejectionReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+    }
+
+    public void Expire(DateTime respondedAt)
+    {
+        EnsurePending();
+        Status = OfferStatus.Expired;
+        RespondedAt = respondedAt;
+    }
+
+    private void EnsurePending()
+    {
+        if (Status != OfferStatus.Pending)
+        {
+            throw new AssignmentConflictException(
+                "Only pending offers can be changed.");
+        }
+    }
 }
