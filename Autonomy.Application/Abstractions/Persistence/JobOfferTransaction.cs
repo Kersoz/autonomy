@@ -6,4 +6,5 @@ public sealed record JobOfferTransaction(
     JobOffer? Offer,
     Delivery? Delivery,
     Assignment? ActiveAssignment,
-    Courier? Courier);
+    Courier? Courier,
+    CourierLocation? LatestLocation);

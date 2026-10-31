@@ -91,7 +91,9 @@ public sealed class JobOffersController(IJobOfferService jobOfferService) : Cont
             offer.OfferedAt,
             offer.ExpiresAt,
             offer.RespondedAt,
-            offer.RejectionReason);
+            offer.RejectionReason,
+            offer.EstimatedDistanceKm,
+            offer.EstimatedTravelTimeMinutes);
     }
 
     private static DeliveryResponse ToResponse(DeliveryDto delivery)

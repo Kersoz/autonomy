@@ -1,4 +1,5 @@
 using Autonomy.Application.Features.Deliveries;
+using Autonomy.Application.Features.Dispatching;
 
 namespace Autonomy.Application.Interfaces;
 
@@ -9,6 +10,10 @@ public interface IDeliveryService
         CancellationToken cancellationToken = default);
 
     Task<DeliveryDto?> GetByIdAsync(
+        Guid deliveryId,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DispatchCandidateDto>> FindCandidatesAsync(
         Guid deliveryId,
         CancellationToken cancellationToken = default);
 

@@ -8,6 +8,10 @@ public interface ICourierRepository : IGenericRepository<Courier>
         Guid fleetId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<CourierDispatchSnapshot>> GetDispatchCandidatesAsync(
+        Guid fleetId,
+        CancellationToken cancellationToken = default);
+
     Task<Courier?> GetByIdInFleetAsync(
         Guid id,
         Guid fleetId,

@@ -1,11 +1,15 @@
 using Autonomy.Application.Abstractions.Persistence;
+using Autonomy.Application.Features.Dispatching;
 using Autonomy.Application.Interfaces;
 using Autonomy.Domain.Entities;
+using Autonomy.Domain.Enums;
+using Autonomy.Domain.Exceptions;
 
 namespace Autonomy.Application.Features.Deliveries;
 
 public sealed class DeliveryApplicationService(
     IDeliveryRepository deliveryRepository,
+    ICourierRepository courierRepository,
     ITenantContext tenantContext,
     IAssignmentService assignmentService) : IDeliveryService
 {
@@ -56,6 +60,51 @@ public sealed class DeliveryApplicationService(
     {
         var delivery = await GetAccessibleDeliveryAsync(deliveryId, cancellationToken);
         return delivery is null ? null : ToDto(delivery);
+    }
+
+    public async Task<IReadOnlyList<DispatchCandidateDto>> FindCandidatesAsync(
+        Guid deliveryId,
+        CancellationToken cancellationToken = default)
+    {
+        var delivery = await GetAccessibleDeliveryAsync(deliveryId, cancellationToken);
+        if (delivery is null)
+        {
+            throw new KeyNotFoundException("The delivery was not found.");
+        }
+
+        if (delivery.Status != DeliveryStatus.PendingAssignment)
+        {
+            throw new AssignmentConflictException(
+                "Candidates can only be found for unassigned deliveries.");
+        }
+
+        var now = DateTime.UtcNow;
+        return (await courierRepository.GetDispatchCandidatesAsync(
+                delivery.FleetId,
+                cancellationToken))
+            .Where(candidate => DispatchCandidateRanking.IsFreshAndValidLocation(
+                candidate.LatestLocation,
+                now))
+            .Select(candidate =>
+            {
+                var location = candidate.LatestLocation!;
+                var (distanceKm, etaMinutes) = DispatchCandidateRanking.Calculate(
+                    location.Latitude,
+                    location.Longitude,
+                    delivery.PickupLatitude,
+                    delivery.PickupLongitude);
+                return new DispatchCandidateDto(
+                    candidate.Courier.Id,
+                    candidate.Courier.Name,
+                    distanceKm,
+                    etaMinutes,
+                    location.RecordedAt);
+            })
+            .OrderBy(candidate => candidate.DistanceKm)
+            .ThenBy(candidate => candidate.EstimatedArrivalMinutes)
+            .ThenBy(candidate => candidate.CourierName)
+            .ThenBy(candidate => candidate.CourierId)
+            .ToArray();
     }
 
     public async Task<DeliveryDto?> AssignAsync(

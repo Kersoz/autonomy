@@ -1,6 +1,7 @@
 using Autonomy.Application.Abstractions.Persistence;
 using Autonomy.Application.DTOs.JobOffers;
 using Autonomy.Application.Features.Deliveries;
+using Autonomy.Application.Features.Dispatching;
 using Autonomy.Application.Interfaces;
 using Autonomy.Domain.Entities;
 using Autonomy.Domain.Enums;
@@ -42,6 +43,25 @@ public sealed class JobOfferApplicationService(
                 }
 
                 ValidateCourierState(courier);
+                var location = transaction.LatestLocation;
+                if (location is null
+                    || !DispatchCandidateRanking.IsFreshAndValidLocation(location, now))
+                {
+                    throw new AssignmentConflictException(
+                        "The courier does not have a fresh, valid location.");
+                }
+
+                if (courier.ActiveDeliveryCount >= courier.MaxSimultaneousDeliveries)
+                {
+                    throw new AssignmentConflictException(
+                        "The courier has reached concurrent assignment capacity.");
+                }
+
+                var (distanceKm, etaMinutes) = DispatchCandidateRanking.Calculate(
+                    location.Latitude,
+                    location.Longitude,
+                    delivery.PickupLatitude,
+                    delivery.PickupLongitude);
 
                 if (delivery.Status != DeliveryStatus.PendingAssignment
                     || transaction.ActiveAssignment is not null)
@@ -60,7 +80,9 @@ public sealed class JobOfferApplicationService(
                     CourierId = courier.Id,
                     OfferedAt = now,
                     ExpiresAt = now.Add(OfferLifetime),
-                    Status = OfferStatus.Pending
+                    Status = OfferStatus.Pending,
+                    EstimatedDistanceKm = distanceKm,
+                    EstimatedTravelTimeMinutes = etaMinutes
                 };
                 return createdOffer;
             },
@@ -143,7 +165,7 @@ public sealed class JobOfferApplicationService(
                         "The delivery is no longer available for assignment.");
                 }
 
-                ValidateCourier(delivery, courier);
+                ValidateCourier(delivery, courier, transaction.LatestLocation, DateTime.UtcNow);
                 if (courier.ActiveDeliveryCount >= courier.MaxSimultaneousDeliveries)
                 {
                     throw new AssignmentConflictException(
@@ -222,7 +244,11 @@ public sealed class JobOfferApplicationService(
         }
     }
 
-    private static void ValidateCourier(Delivery delivery, Courier courier)
+    private static void ValidateCourier(
+        Delivery delivery,
+        Courier courier,
+        CourierLocation? latestLocation,
+        DateTime now)
     {
         if (courier.FleetId != delivery.FleetId)
         {
@@ -231,6 +257,11 @@ public sealed class JobOfferApplicationService(
         }
 
         ValidateCourierState(courier);
+        if (!DispatchCandidateRanking.IsFreshAndValidLocation(latestLocation, now))
+        {
+            throw new AssignmentConflictException(
+                "The courier does not have a fresh, valid location.");
+        }
     }
 
     private static void ValidateCourierState(Courier courier)
@@ -261,7 +292,9 @@ public sealed class JobOfferApplicationService(
             offer.OfferedAt,
             offer.ExpiresAt,
             offer.RespondedAt,
-            offer.RejectionReason);
+            offer.RejectionReason,
+            offer.EstimatedDistanceKm,
+            offer.EstimatedTravelTimeMinutes);
     }
 
     private static DeliveryDto ToDeliveryDto(Delivery delivery)

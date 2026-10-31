@@ -10,4 +10,6 @@ public sealed record JobOfferDto(
     DateTime OfferedAt,
     DateTime ExpiresAt,
     DateTime? RespondedAt,
-    string? RejectionReason);
+    string? RejectionReason,
+    decimal? EstimatedDistanceKm,
+    int? EstimatedTravelTimeMinutes);

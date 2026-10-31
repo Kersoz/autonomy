@@ -1,6 +1,7 @@
 using Autonomy.Api.Authorization;
 using Autonomy.Api.Contracts.Deliveries;
 using Autonomy.Application.Features.Deliveries;
+using Autonomy.Application.Features.Dispatching;
 using Autonomy.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +24,18 @@ public sealed class DeliveriesController(IDeliveryService deliveryService) : Con
     {
         var delivery = await deliveryService.GetByIdAsync(id, cancellationToken);
         return delivery is null ? NotFound() : Ok(ToResponse(delivery));
+    }
+
+    [HttpGet("{id:guid}/candidates")]
+    [Authorize(Policy = AuthorizationPolicies.DeliveryDispatch)]
+    [ProducesResponseType<IReadOnlyList<DispatchCandidateDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<IReadOnlyList<DispatchCandidateDto>>> FindCandidates(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await deliveryService.FindCandidatesAsync(id, cancellationToken));
     }
 
     [HttpPost]
@@ -76,6 +89,7 @@ public sealed class DeliveriesController(IDeliveryService deliveryService) : Con
     }
 
     [HttpPost("{id:guid}/reassign")]
+    [HttpPost("{id:guid}/force-reassign")]
     [Authorize(Policy = AuthorizationPolicies.DeliveryDispatch)]
     [ProducesResponseType<DeliveryResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

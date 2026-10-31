@@ -33,7 +33,7 @@ public sealed class JobOfferRepository(AutonomyDbContext context) : IJobOfferRep
                 if (offer is null)
                 {
                     var missingOfferResult = operation(
-                        new JobOfferTransaction(null, null, null, null));
+                        new JobOfferTransaction(null, null, null, null, null));
                     await dbTransaction.CommitAsync(cancellationToken);
                     return missingOfferResult;
                 }
@@ -45,6 +45,7 @@ public sealed class JobOfferRepository(AutonomyDbContext context) : IJobOfferRep
             Delivery? delivery = null;
             Assignment? activeAssignment = null;
             Courier? courier = null;
+            CourierLocation? latestLocation = null;
 
             if (deliveryId is Guid requestedDeliveryId)
             {
@@ -68,13 +69,23 @@ public sealed class JobOfferRepository(AutonomyDbContext context) : IJobOfferRep
                 courier = await context.Couriers.SingleOrDefaultAsync(
                     item => item.Id == requestedCourierId,
                     cancellationToken);
+                if (courier is not null)
+                {
+                    latestLocation = await context.CourierLocations
+                        .Where(location => location.FleetId == courier.FleetId
+                            && location.CourierId == courier.Id)
+                        .OrderByDescending(location => location.RecordedAt)
+                        .ThenByDescending(location => location.Id)
+                        .FirstOrDefaultAsync(cancellationToken);
+                }
             }
 
             var result = operation(new JobOfferTransaction(
                 offer,
                 delivery,
                 activeAssignment,
-                courier));
+                courier,
+                latestLocation));
             if (result is JobOffer createdOffer
                 && context.Entry(createdOffer).State == EntityState.Detached)
             {
