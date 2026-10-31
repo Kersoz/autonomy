@@ -1,0 +1,61 @@
+@baseUrl = http://localhost:5225
+@deliveryId = 00000000-0000-0000-0000-000000000000
+@fleetId = 00000000-0000-0000-0000-000000000000
+@merchantId = 00000000-0000-0000-0000-000000000000
+@courierId = 00000000-0000-0000-0000-000000000000
+@accessToken = replace-with-access-token
+
+### Create delivery
+POST {{baseUrl}}/api/v1/deliveries
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "fleetId": "{{fleetId}}",
+  "merchantId": "{{merchantId}}",
+  "customerName": "Test Customer",
+  "customerPhone": "+905551112233",
+  "pickupAddress": "Pickup Street 1",
+  "pickupLatitude": 41.0082,
+  "pickupLongitude": 28.9784,
+  "dropoffAddress": "Dropoff Street 2",
+  "dropoffLatitude": 41.015,
+  "dropoffLongitude": 28.979,
+  "orderValue": 250.00,
+  "paymentMethod": "Card",
+  "currency": "TRY"
+}
+
+### Assign delivery
+POST {{baseUrl}}/api/v1/deliveries/{{deliveryId}}/assign
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "courierId": "{{courierId}}"
+}
+
+### Pick up delivery
+POST {{baseUrl}}/api/v1/deliveries/{{deliveryId}}/pickup
+Authorization: Bearer {{accessToken}}
+
+### Complete delivery
+POST {{baseUrl}}/api/v1/deliveries/{{deliveryId}}/complete
+Authorization: Bearer {{accessToken}}
+
+### Cancel delivery
+POST {{baseUrl}}/api/v1/deliveries/{{deliveryId}}/cancel
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "reason": "Customer cancelled the order"
+}
+
+### Fail delivery
+POST {{baseUrl}}/api/v1/deliveries/{{deliveryId}}/fail
+Authorization: Bearer {{accessToken}}
+
+### Retrieve a delivery
+GET {{baseUrl}}/api/v1/deliveries/{{deliveryId}}
+Authorization: Bearer {{accessToken}}

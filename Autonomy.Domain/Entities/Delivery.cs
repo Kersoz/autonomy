@@ -1,10 +1,14 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Autonomy.Domain.Common;
 using Autonomy.Domain.Enums;
+using Autonomy.Domain.Exceptions;
 
 namespace Autonomy.Domain.Entities;
 
 public class Delivery : BaseEntity
 {
+    private readonly List<DeliveryStatusTransition> _statusTransitions = [];
+
     public string ReferenceNumber { get; set; } = null!;
 
     public Guid FleetId { get; set; }
@@ -40,7 +44,7 @@ public class Delivery : BaseEntity
 
     public PaymentMethod PaymentMethod { get; set; }
 
-    public DeliveryStatus Status { get; set; }
+    public DeliveryStatus Status { get; private set; } = DeliveryStatus.Created;
 
     public Guid? AssignedCourierId { get; set; }
 
@@ -79,4 +83,100 @@ public class Delivery : BaseEntity
     public string? CompletionMethod { get; set; }
 
     public string? CompletionActor { get; set; }
+
+    [NotMapped]
+    public IReadOnlyCollection<DeliveryStatusTransition> PendingStatusTransitions =>
+        _statusTransitions.AsReadOnly();
+
+    public void ClearPendingStatusTransitions()
+    {
+        _statusTransitions.Clear();
+    }
+
+    public void QueueForAssignment()
+    {
+        TransitionTo(DeliveryStatus.PendingAssignment, DeliveryStatus.Created);
+    }
+
+    public void Assign(Guid courierId)
+    {
+        if (courierId == Guid.Empty)
+        {
+            throw new ArgumentException("A courier ID is required.", nameof(courierId));
+        }
+
+        TransitionTo(DeliveryStatus.Assigned, DeliveryStatus.PendingAssignment);
+        AssignedCourierId = courierId;
+        FirstAssignmentAt ??= DateTime.UtcNow;
+    }
+
+    public void Pickup()
+    {
+        TransitionTo(
+            DeliveryStatus.PickedUp,
+            DeliveryStatus.Assigned,
+            DeliveryStatus.CourierOnTheWayToPickup,
+            DeliveryStatus.ArrivedAtMerchant);
+        PickedUpAt = DateTime.UtcNow;
+    }
+
+    public void Deliver(string? completionActor = null)
+    {
+        TransitionTo(
+            DeliveryStatus.Delivered,
+            DeliveryStatus.PickedUp,
+            DeliveryStatus.CourierOnTheWayToCustomer);
+        DeliveredAt = DateTime.UtcNow;
+        CompletionMethod = "Courier";
+        CompletionActor = completionActor;
+    }
+
+    public void Cancel(string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new ArgumentException("A cancellation reason is required.", nameof(reason));
+        }
+
+        TransitionTo(
+            DeliveryStatus.Cancelled,
+            DeliveryStatus.Created,
+            DeliveryStatus.PendingAssignment,
+            DeliveryStatus.Assigned,
+            DeliveryStatus.CourierOnTheWayToPickup,
+            DeliveryStatus.ArrivedAtMerchant);
+        CancelledAt = DateTime.UtcNow;
+        CancellationReason = reason.Trim();
+    }
+
+    public void Fail()
+    {
+        TransitionTo(
+            DeliveryStatus.Failed,
+            DeliveryStatus.Created,
+            DeliveryStatus.PendingAssignment,
+            DeliveryStatus.Assigned,
+            DeliveryStatus.CourierOnTheWayToPickup,
+            DeliveryStatus.ArrivedAtMerchant,
+            DeliveryStatus.PickedUp,
+            DeliveryStatus.CourierOnTheWayToCustomer);
+    }
+
+    private void TransitionTo(
+        DeliveryStatus targetStatus,
+        params DeliveryStatus[] allowedCurrentStatuses)
+    {
+        if (!allowedCurrentStatuses.Contains(Status))
+        {
+            throw new InvalidDeliveryTransitionException(Status, targetStatus);
+        }
+
+        var previousStatus = Status;
+        Status = targetStatus;
+        _statusTransitions.Add(new DeliveryStatusTransition(
+            Guid.NewGuid(),
+            previousStatus,
+            targetStatus,
+            DateTime.UtcNow));
+    }
 }

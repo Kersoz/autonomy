@@ -10,5 +10,6 @@ public enum DeliveryStatus
     CourierOnTheWayToCustomer = 6,
     Delivered = 7,
     Cancelled = 8,
-    Failed = 9
+    Failed = 9,
+    PendingAssignment = 10
 }

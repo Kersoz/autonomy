@@ -11,6 +11,9 @@ public static class AuthorizationPolicies
     public const string FleetOperations = nameof(FleetOperations);
     public const string MerchantOperations = nameof(MerchantOperations);
     public const string CourierOperations = nameof(CourierOperations);
+    public const string DeliveryOperations = nameof(DeliveryOperations);
+    public const string DeliveryManagement = nameof(DeliveryManagement);
+    public const string DeliveryDispatch = nameof(DeliveryDispatch);
 
     public const string TenantIdClaim = "tenant_id";
     public const string MerchantIdClaim = "merchant_id";

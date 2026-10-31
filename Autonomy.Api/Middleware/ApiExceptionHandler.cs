@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Autonomy.Domain.Exceptions;
 
 namespace Autonomy.Api.Middleware;
 
@@ -13,6 +14,8 @@ public sealed class ApiExceptionHandler(
     {
         var (statusCode, title) = exception switch
         {
+            InvalidDeliveryTransitionException =>
+                (StatusCodes.Status409Conflict, "Invalid delivery transition"),
             UnauthorizedAccessException =>
                 (StatusCodes.Status403Forbidden, "Forbidden"),
             KeyNotFoundException =>
@@ -42,6 +45,7 @@ public sealed class ApiExceptionHandler(
                 StatusCodes.Status400BadRequest => "The request was invalid.",
                 StatusCodes.Status403Forbidden => "The request is not allowed.",
                 StatusCodes.Status404NotFound => "The requested resource was not found.",
+                StatusCodes.Status409Conflict => "The delivery cannot transition from its current state.",
                 _ => "The server could not complete the request."
             },
             Instance = httpContext.Request.Path

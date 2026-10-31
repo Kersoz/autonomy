@@ -7,6 +7,7 @@ using Autonomy.Api.Services;
 using Autonomy.Api.Validation;
 using Autonomy.Application.Abstractions.Persistence;
 using Autonomy.Application.Features.Couriers;
+using Autonomy.Application.Features.Deliveries;
 using Autonomy.Application.Interfaces;
 using Autonomy.Application.Mappings;
 using FluentValidation;
@@ -78,7 +79,9 @@ builder.Services.AddDbContext<AutonomyDbContext>(options =>
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<ICourierRepository, CourierRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
 builder.Services.AddScoped<ICourierService, CourierService>();
+builder.Services.AddScoped<IDeliveryService, DeliveryApplicationService>();
 builder.Services.AddAutoMapper(
     _ => { },
     typeof(CourierMappingProfile).Assembly);
@@ -191,6 +194,32 @@ builder.Services.AddAuthorization(options =>
             AuthorizationPolicies.IsPlatformAdmin(context.User)
             || (context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.Courier)
                 && AuthorizationPolicies.HasTenant(context.User))));
+
+    options.AddPolicy(AuthorizationPolicies.DeliveryOperations, policy =>
+        policy.RequireAssertion(context =>
+            AuthorizationPolicies.IsPlatformAdmin(context.User)
+            || (AuthorizationPolicies.HasTenant(context.User)
+                && (context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.FleetAdmin)
+                    || context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.Dispatcher)
+                    || context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.Courier)
+                    || (context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.MerchantUser)
+                        && AuthorizationPolicies.HasMerchant(context.User))))));
+
+    options.AddPolicy(AuthorizationPolicies.DeliveryManagement, policy =>
+        policy.RequireAssertion(context =>
+            AuthorizationPolicies.IsPlatformAdmin(context.User)
+            || (AuthorizationPolicies.HasTenant(context.User)
+                && (context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.FleetAdmin)
+                    || context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.Dispatcher)
+                    || (context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.MerchantUser)
+                        && AuthorizationPolicies.HasMerchant(context.User))))));
+
+    options.AddPolicy(AuthorizationPolicies.DeliveryDispatch, policy =>
+        policy.RequireAssertion(context =>
+            AuthorizationPolicies.IsPlatformAdmin(context.User)
+            || (AuthorizationPolicies.HasTenant(context.User)
+                && (context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.FleetAdmin)
+                    || context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.Dispatcher)))));
 });
 
 var frontendOrigin = builder.Configuration["Cors:FrontendOrigin"];

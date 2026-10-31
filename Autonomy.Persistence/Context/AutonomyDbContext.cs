@@ -4,6 +4,7 @@ using Autonomy.Application.Interfaces;
 using Autonomy.Persistence.Audit;
 using Autonomy.Domain.Common;
 using Autonomy.Domain.Entities;
+using Autonomy.Domain.Enums;
 using Autonomy.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -15,6 +16,7 @@ public class AutonomyDbContext
     : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
 {
     private readonly ITenantContext _tenantContext;
+    private readonly HashSet<Guid> _processedDeliveryStatusTransitionIds = [];
 
     public AutonomyDbContext(
         DbContextOptions<AutonomyDbContext> options,
@@ -44,29 +46,42 @@ public class AutonomyDbContext
 
     public override int SaveChanges()
     {
-        PrepareChanges();
-        return base.SaveChanges();
+        return SaveChanges(acceptAllChangesOnSuccess: true);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         PrepareChanges();
-        return base.SaveChanges(acceptAllChangesOnSuccess);
+        var result = base.SaveChanges(acceptAllChangesOnSuccess);
+        ClearDeliveryStatusTransitions();
+        return result;
     }
 
     public override Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default)
     {
-        PrepareChanges();
-        return base.SaveChangesAsync(cancellationToken);
+        return SaveChangesAsync(
+            acceptAllChangesOnSuccess: true,
+            cancellationToken);
     }
 
     public override Task<int> SaveChangesAsync(
         bool acceptAllChangesOnSuccess,
         CancellationToken cancellationToken = default)
     {
+        return SaveChangesAsyncCore(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private async Task<int> SaveChangesAsyncCore(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken)
+    {
         PrepareChanges();
-        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        var result = await base.SaveChangesAsync(
+            acceptAllChangesOnSuccess,
+            cancellationToken);
+        ClearDeliveryStatusTransitions();
+        return result;
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -188,6 +203,8 @@ public class AutonomyDbContext
         ChangeTracker.DetectChanges();
         var auditEntries = new List<AuditLog>();
 
+        AddDeliveryStatusHistoryEntries();
+
         foreach (var entry in ChangeTracker.Entries()
                      .Where(entry => entry.Entity is ITenantEntity
                          && entry.Entity is not AuditLog
@@ -295,6 +312,54 @@ public class AutonomyDbContext
         {
             AuditLogs.AddRange(auditEntries);
         }
+    }
+
+    private void AddDeliveryStatusHistoryEntries()
+    {
+        var deliveries = ChangeTracker.Entries<Delivery>()
+            .Select(entry => entry.Entity)
+            .Where(delivery => delivery.PendingStatusTransitions.Count > 0)
+            .ToList();
+
+        foreach (var delivery in deliveries)
+        {
+            if (delivery.Id == Guid.Empty)
+            {
+                delivery.Id = Guid.NewGuid();
+            }
+
+            var tenantId = delivery.TenantId != Guid.Empty
+                ? delivery.TenantId
+                : delivery.FleetId;
+            foreach (var transition in delivery.PendingStatusTransitions)
+            {
+                if (!_processedDeliveryStatusTransitionIds.Add(transition.Id))
+                {
+                    continue;
+                }
+
+                DeliveryStatusHistories.Add(new DeliveryStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    TenantId = tenantId,
+                    DeliveryId = delivery.Id,
+                    PreviousStatus = transition.PreviousStatus.ToString(),
+                    NewStatus = transition.NewStatus.ToString(),
+                    ChangedByUserId = _tenantContext.UserId,
+                    ChangedAt = transition.OccurredAtUtc
+                });
+            }
+        }
+    }
+
+    private void ClearDeliveryStatusTransitions()
+    {
+        foreach (var entry in ChangeTracker.Entries<Delivery>())
+        {
+            entry.Entity.ClearPendingStatusTransitions();
+        }
+
+        _processedDeliveryStatusTransitionIds.Clear();
     }
 
     private void EnsureTenantAccess(Guid entityTenantId, string entityName)
