@@ -1,4 +1,5 @@
 using Autonomy.Application.Abstractions.Persistence;
+using Autonomy.Application.Common;
 using Autonomy.Application.DTOs.JobOffers;
 using Autonomy.Application.Features.Deliveries;
 using Autonomy.Application.Features.Dispatching;
@@ -41,6 +42,8 @@ public sealed class JobOfferApplicationService(
                     throw new KeyNotFoundException(
                         "The courier was not found in the delivery fleet.");
                 }
+
+                TenantConsistencyChecker.EnsureSameTenant(delivery, courier);
 
                 ValidateCourierState(courier);
                 var location = transaction.LatestLocation;
@@ -158,6 +161,8 @@ public sealed class JobOfferApplicationService(
                     ?? throw new KeyNotFoundException("The delivery was not found.");
                 var courier = transaction.Courier
                     ?? throw new KeyNotFoundException("The courier was not found.");
+                TenantConsistencyChecker.EnsureSameTenant(offer, delivery);
+                TenantConsistencyChecker.EnsureSameTenant(offer, courier);
                 if (delivery.Status != DeliveryStatus.PendingAssignment
                     || transaction.ActiveAssignment is not null)
                 {
@@ -220,6 +225,16 @@ public sealed class JobOfferApplicationService(
             {
                 var existingOffer = transaction.Offer
                     ?? throw new KeyNotFoundException("The job offer was not found.");
+                if (transaction.Delivery is { } delivery)
+                {
+                    TenantConsistencyChecker.EnsureSameTenant(existingOffer, delivery);
+                }
+
+                if (transaction.Courier is { } courier)
+                {
+                    TenantConsistencyChecker.EnsureSameTenant(existingOffer, courier);
+                }
+
                 EnsureCourierActor(transaction.Courier);
                 respond(existingOffer, now);
                 return existingOffer;
@@ -250,6 +265,8 @@ public sealed class JobOfferApplicationService(
         CourierLocation? latestLocation,
         DateTime now)
     {
+        TenantConsistencyChecker.EnsureSameTenant(delivery, courier);
+
         if (courier.FleetId != delivery.FleetId)
         {
             throw new AssignmentConflictException(

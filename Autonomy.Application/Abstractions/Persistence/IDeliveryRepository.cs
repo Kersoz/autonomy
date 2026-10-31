@@ -13,6 +13,10 @@ public interface IDeliveryRepository
         Guid fleetId,
         CancellationToken cancellationToken = default);
 
+    Task<Guid?> GetMerchantTenantIdAsync(
+        Guid merchantId,
+        CancellationToken cancellationToken = default);
+
     Task<bool> CourierBelongsToFleetAsync(
         Guid courierId,
         Guid fleetId,

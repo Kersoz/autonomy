@@ -1,4 +1,5 @@
 using Autonomy.Application.Abstractions.Persistence;
+using Autonomy.Application.Common;
 using Autonomy.Application.Features.Dispatching;
 using Autonomy.Application.Interfaces;
 using Autonomy.Domain.Entities;
@@ -28,9 +29,17 @@ public sealed class DeliveryApplicationService(
             throw new KeyNotFoundException("The merchant was not found in the specified fleet.");
         }
 
+        var merchantTenantId = await deliveryRepository.GetMerchantTenantIdAsync(
+            command.MerchantId,
+            cancellationToken)
+            ?? throw new KeyNotFoundException(
+                "The merchant was not found in the specified fleet.");
+        TenantConsistencyChecker.EnsureSameTenant(command.FleetId, merchantTenantId);
+
         var delivery = new Delivery
         {
             Id = Guid.NewGuid(),
+            TenantId = command.FleetId,
             ReferenceNumber = $"DLV-{Guid.NewGuid():N}",
             FleetId = command.FleetId,
             MerchantId = command.MerchantId,

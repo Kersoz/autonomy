@@ -26,6 +26,16 @@ public sealed class DeliveryRepository(AutonomyDbContext context) : IDeliveryRep
             cancellationToken);
     }
 
+    public Task<Guid?> GetMerchantTenantIdAsync(
+        Guid merchantId,
+        CancellationToken cancellationToken = default)
+    {
+        return context.Merchants
+            .Where(merchant => merchant.Id == merchantId)
+            .Select(merchant => (Guid?)merchant.TenantId)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
     public Task<bool> CourierBelongsToFleetAsync(
         Guid courierId,
         Guid fleetId,

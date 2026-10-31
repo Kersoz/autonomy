@@ -1,4 +1,5 @@
 using Autonomy.Application.Abstractions.Persistence;
+using Autonomy.Application.Common;
 using Autonomy.Application.Features.Deliveries;
 using Autonomy.Application.Interfaces;
 using Autonomy.Domain.Entities;
@@ -232,6 +233,8 @@ public sealed class AssignmentApplicationService(
             throw new KeyNotFoundException("The courier was not found in the delivery fleet.");
         }
 
+        TenantConsistencyChecker.EnsureSameTenant(delivery, courier);
+
         if (!courier.IsEnabled)
         {
             throw new AssignmentConflictException("The courier is disabled.");
@@ -271,6 +274,9 @@ public sealed class AssignmentApplicationService(
             throw new InvalidOperationException(
                 "The active assignment references a courier that does not exist.");
         }
+
+        TenantConsistencyChecker.EnsureSameTenant(delivery, assignment);
+        TenantConsistencyChecker.EnsureSameTenant(delivery, courier);
 
         if (requireCourierUser
             && (courierUserId is not Guid userId || courier.UserId != userId))
