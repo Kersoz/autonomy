@@ -1,6 +1,56 @@
 @Autonomy.Api_HostAddress = http://localhost:5225
+@AdminToken = replace-with-admin-jwt
+@courierId = 00000000-0000-0000-0000-000000000001
 
-GET {{Autonomy.Api_HostAddress}}/weatherforecast/
+### Get all couriers
+GET {{Autonomy.Api_HostAddress}}/api/v1/admin/couriers
+Authorization: Bearer {{AdminToken}}
 Accept: application/json
 
 ###
+
+### Get courier by ID
+GET {{Autonomy.Api_HostAddress}}/api/v1/admin/couriers/{{courierId}}
+Authorization: Bearer {{AdminToken}}
+Accept: application/json
+
+###
+
+### Create courier
+POST {{Autonomy.Api_HostAddress}}/api/v1/admin/couriers
+Authorization: Bearer {{AdminToken}}
+Content-Type: application/json
+
+{
+  "fleetId": "00000000-0000-0000-0000-000000000001",
+  "userId": "00000000-0000-0000-0000-000000000002",
+  "name": "Ahmet Yılmaz",
+  "contactPhone": "+905551112233",
+  "vehicleType": "Motorcycle",
+  "vehiclePlate": "34ABC123",
+  "maxSimultaneousDeliveries": 1
+}
+
+###
+
+### Update courier
+PUT {{Autonomy.Api_HostAddress}}/api/v1/admin/couriers/{{courierId}}
+Authorization: Bearer {{AdminToken}}
+Content-Type: application/json
+
+{
+  "name": "Ahmet Yılmaz",
+  "contactPhone": "+905551112233",
+  "isEnabled": true,
+  "onlineStatus": "Online",
+  "availabilityStatus": "Available",
+  "vehicleType": "Motorcycle",
+  "vehiclePlate": "34ABC123",
+  "maxSimultaneousDeliveries": 1
+}
+
+###
+
+### Delete courier
+DELETE {{Autonomy.Api_HostAddress}}/api/v1/admin/couriers/{{courierId}}
+Authorization: Bearer {{AdminToken}}

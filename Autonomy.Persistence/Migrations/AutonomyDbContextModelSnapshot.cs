@@ -37,6 +37,9 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("DeliveryId")
                         .HasColumnType("uuid");
 
@@ -76,8 +79,14 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -90,6 +99,8 @@ namespace Autonomy.Persistence.Migrations
                     b.HasIndex("PreviousAssignmentId");
 
                     b.HasIndex("RelatedOfferId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Assignments");
                 });
@@ -113,6 +124,9 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("CurrentAssignmentId")
                         .HasColumnType("uuid");
 
@@ -135,8 +149,14 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<int>("OnlineStatus")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -150,6 +170,8 @@ namespace Autonomy.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FleetId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Couriers");
                 });
@@ -173,6 +195,9 @@ namespace Autonomy.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("DeviceId")
                         .IsRequired()
@@ -201,14 +226,22 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<string>("StoreIdentifier")
                         .HasColumnType("text");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Version")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("CourierAppInstallations");
                 });
@@ -228,6 +261,9 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("FleetId")
                         .HasColumnType("uuid");
 
@@ -240,10 +276,18 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<DateTime>("RecordedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("CourierLocations");
                 });
@@ -280,6 +324,9 @@ namespace Autonomy.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid");
@@ -363,6 +410,9 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("TravelToCustomerStartedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -371,6 +421,9 @@ namespace Autonomy.Persistence.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -382,6 +435,8 @@ namespace Autonomy.Persistence.Migrations
                     b.HasIndex("FleetId");
 
                     b.HasIndex("MerchantId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Deliveries");
                 });
@@ -401,6 +456,9 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("DeliveryId")
                         .HasColumnType("uuid");
 
@@ -412,10 +470,18 @@ namespace Autonomy.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("DeliveryStatusHistories");
                 });
@@ -435,6 +501,9 @@ namespace Autonomy.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("DefaultCurrency")
                         .IsRequired()
@@ -459,10 +528,18 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<string>("SupportPhone")
                         .HasColumnType("text");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Fleets");
                 });
@@ -482,6 +559,9 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("FleetId")
                         .HasColumnType("uuid");
 
@@ -491,8 +571,14 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<bool>("MerchantTrackingEnabled")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("UpdatedByUserId")
                         .HasColumnType("uuid");
@@ -502,6 +588,8 @@ namespace Autonomy.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("FleetPolicies");
                 });
@@ -517,6 +605,9 @@ namespace Autonomy.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("DeliveryId")
                         .HasColumnType("uuid");
@@ -545,8 +636,14 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -555,6 +652,8 @@ namespace Autonomy.Persistence.Migrations
                     b.HasIndex("DeliveryId");
 
                     b.HasIndex("FleetId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("JobOffers");
                 });
@@ -574,6 +673,9 @@ namespace Autonomy.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Email")
                         .HasColumnType("text");
@@ -604,14 +706,71 @@ namespace Autonomy.Persistence.Migrations
                     b.Property<decimal>("PickupLongitude")
                         .HasColumnType("numeric");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("FleetId");
 
+                    b.HasIndex("TenantId");
+
                     b.ToTable("Merchants");
+                });
+
+            modelBuilder.Entity("Autonomy.Persistence.Audit.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ChangesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("EntityName", "EntityId");
+
+                    b.HasIndex("TenantId", "OccurredAtUtc");
+
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("Autonomy.Persistence.Identity.ApplicationUser", b =>
@@ -690,6 +849,86 @@ namespace Autonomy.Persistence.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Autonomy.Persistence.Identity.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("MerchantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ReplacedByTokenHash")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "ExpiresAtUtc");
+
+                    b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("Autonomy.Persistence.Identity.TenantRoleAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("MerchantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId", "TenantId", "RoleName")
+                        .IsUnique()
+                        .HasFilter("\"MerchantId\" IS NULL");
+
+                    b.HasIndex("UserId", "TenantId", "MerchantId", "RoleName")
+                        .IsUnique()
+                        .HasFilter("\"MerchantId\" IS NOT NULL");
+
+                    b.ToTable("TenantRoleAssignments");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")
@@ -715,6 +954,43 @@ namespace Autonomy.Persistence.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("d23be2ec-37c4-48b0-80a6-b0d7b226d101"),
+                            ConcurrencyStamp = "d23be2ec-37c4-48b0-80a6-b0d7b226d101",
+                            Name = "PlatformAdmin",
+                            NormalizedName = "PLATFORMADMIN"
+                        },
+                        new
+                        {
+                            Id = new Guid("d23be2ec-37c4-48b0-80a6-b0d7b226d102"),
+                            ConcurrencyStamp = "d23be2ec-37c4-48b0-80a6-b0d7b226d102",
+                            Name = "FleetAdmin",
+                            NormalizedName = "FLEETADMIN"
+                        },
+                        new
+                        {
+                            Id = new Guid("d23be2ec-37c4-48b0-80a6-b0d7b226d103"),
+                            ConcurrencyStamp = "d23be2ec-37c4-48b0-80a6-b0d7b226d103",
+                            Name = "Dispatcher",
+                            NormalizedName = "DISPATCHER"
+                        },
+                        new
+                        {
+                            Id = new Guid("d23be2ec-37c4-48b0-80a6-b0d7b226d104"),
+                            ConcurrencyStamp = "d23be2ec-37c4-48b0-80a6-b0d7b226d104",
+                            Name = "MerchantUser",
+                            NormalizedName = "MERCHANTUSER"
+                        },
+                        new
+                        {
+                            Id = new Guid("d23be2ec-37c4-48b0-80a6-b0d7b226d105"),
+                            ConcurrencyStamp = "d23be2ec-37c4-48b0-80a6-b0d7b226d105",
+                            Name = "Courier",
+                            NormalizedName = "COURIER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -937,6 +1213,28 @@ namespace Autonomy.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Fleet");
+                });
+
+            modelBuilder.Entity("Autonomy.Persistence.Identity.RefreshToken", b =>
+                {
+                    b.HasOne("Autonomy.Persistence.Identity.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Autonomy.Persistence.Identity.TenantRoleAssignment", b =>
+                {
+                    b.HasOne("Autonomy.Persistence.Identity.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

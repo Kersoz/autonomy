@@ -1,0 +1,102 @@
+@baseUrl = https://localhost:7158
+@accessToken = paste-access-token-here
+
+### Sign in
+# Refresh token is returned as an HttpOnly cookie.
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "replace-with-password",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "merchantId": null
+}
+
+### Refresh access token
+# Send the refresh cookie received from the login response.
+POST {{baseUrl}}/api/v1/auth/refresh
+
+### Revoke refresh token
+POST {{baseUrl}}/api/v1/auth/revoke
+Authorization: Bearer {{accessToken}}
+
+### Assign a tenant role (PlatformAdmin access token required)
+POST {{baseUrl}}/api/v1/admin/tenant-role-assignments
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "userId": "00000000-0000-0000-0000-000000000002",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "merchantId": null,
+  "roleName": "FleetAdmin"
+}
+
+### Create a PlatformAdmin (PlatformAdmin access token required)
+POST {{baseUrl}}/api/v1/admin/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "new-platform-admin@example.com",
+  "password": "replace-with-strong-password",
+  "firstName": "Platform",
+  "lastName": "Administrator",
+  "roleName": "PlatformAdmin"
+}
+
+### Create a FleetAdmin for a fleet (PlatformAdmin access token required)
+POST {{baseUrl}}/api/v1/admin/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "fleet-admin@example.com",
+  "password": "replace-with-strong-password",
+  "firstName": "Fleet",
+  "lastName": "Administrator",
+  "roleName": "FleetAdmin",
+  "tenantId": "00000000-0000-0000-0000-000000000001"
+}
+
+### Create a Dispatcher in the active fleet (FleetAdmin access token required)
+POST {{baseUrl}}/api/v1/admin/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "dispatcher@example.com",
+  "password": "replace-with-strong-password",
+  "firstName": "Fleet",
+  "lastName": "Dispatcher",
+  "roleName": "Dispatcher"
+}
+
+### Create a Courier in the active fleet (FleetAdmin access token required)
+POST {{baseUrl}}/api/v1/admin/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "courier@example.com",
+  "password": "replace-with-strong-password",
+  "firstName": "Fleet",
+  "lastName": "Courier",
+  "roleName": "Courier"
+}
+
+### Create a MerchantUser (PlatformAdmin access token required)
+POST {{baseUrl}}/api/v1/admin/users
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "merchant-user@example.com",
+  "password": "replace-with-strong-password",
+  "firstName": "Merchant",
+  "lastName": "User",
+  "roleName": "MerchantUser",
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "merchantId": "00000000-0000-0000-0000-000000000003"
+}

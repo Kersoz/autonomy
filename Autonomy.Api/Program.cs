@@ -1,11 +1,20 @@
 
 using System.Text;
+using System.Text.Json.Serialization;
+using Autonomy.Api.Authorization;
+using Autonomy.Api.Middleware;
+using Autonomy.Api.Services;
+using Autonomy.Api.Validation;
 using Autonomy.Application.Abstractions.Persistence;
+using Autonomy.Application.Features.Couriers;
 using Autonomy.Application.Interfaces;
+using Autonomy.Application.Mappings;
+using FluentValidation;
 using Autonomy.Persistence.Context;
 using Autonomy.Persistence.Identity;
 using Autonomy.Persistence.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +23,46 @@ var builder = WebApplication.CreateBuilder(args);
 
 // OpenAPI
 builder.Services.AddOpenApi();
+builder.Services
+    .AddControllers()
+    .AddMvcOptions(options =>
+    {
+        options.Filters.AddService<FluentValidationActionFilter>();
+        options.Filters.AddService<CorrelationProblemDetailsFilter>();
+    })
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddScoped<FluentValidationActionFilter>();
+builder.Services.AddScoped<CorrelationProblemDetailsFilter>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateUserRequestValidator>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ITenantContext, HttpTenantContext>();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        context.ProblemDetails.Extensions["correlationId"] =
+            context.HttpContext.Items[CorrelationIdMiddleware.ItemKey]?.ToString()
+            ?? context.HttpContext.TraceIdentifier;
+        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+    };
+});
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var details = new ValidationProblemDetails(context.ModelState)
+        {
+            Status = StatusCodes.Status400BadRequest,
+            Title = "One or more validation errors occurred.",
+            Instance = context.HttpContext.Request.Path
+        };
+        details.Extensions["correlationId"] =
+            context.HttpContext.Items[CorrelationIdMiddleware.ItemKey]?.ToString();
+        return new BadRequestObjectResult(details);
+    };
+});
 
 // PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -27,7 +76,13 @@ builder.Services.AddDbContext<AutonomyDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<ICourierRepository, CourierRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<ICourierService, CourierService>();
+builder.Services.AddAutoMapper(
+    _ => { },
+    typeof(CourierMappingProfile).Assembly);
+builder.Services.AddScoped<AuthService>();
 
 // ASP.NET Core Identity
 builder.Services
@@ -76,6 +131,7 @@ builder.Services
     })
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -89,53 +145,90 @@ builder.Services
                 Encoding.UTF8.GetBytes(jwtKey)),
 
             ValidateLifetime = true,
+            NameClaimType = "name",
+            RoleClaimType = "role",
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
 
 // Authorization
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = options.DefaultPolicy;
+
+    options.AddPolicy(AuthorizationPolicies.PlatformAdmin, policy =>
+        policy.RequireRole(Autonomy.Persistence.Identity.AuthorizationRoles.PlatformAdmin));
+
+    options.AddPolicy(AuthorizationPolicies.UserProvisioning, policy =>
+        policy.RequireAssertion(context =>
+            AuthorizationPolicies.IsPlatformAdmin(context.User)
+            || AuthorizationPolicies.IsFleetAdmin(context.User)));
+
+    options.AddPolicy(AuthorizationPolicies.FleetAdmin, policy =>
+        policy.RequireAssertion(context =>
+            AuthorizationPolicies.IsPlatformAdmin(context.User)
+            || (context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.FleetAdmin)
+                && AuthorizationPolicies.HasTenant(
+                    context.User))));
+
+    options.AddPolicy(AuthorizationPolicies.FleetOperations, policy =>
+        policy.RequireAssertion(context =>
+            AuthorizationPolicies.IsPlatformAdmin(context.User)
+            || (AuthorizationPolicies.HasTenant(
+                    context.User)
+                && (context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.FleetAdmin)
+                    || context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.Dispatcher)
+                    || context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.Courier)))));
+
+    options.AddPolicy(AuthorizationPolicies.MerchantOperations, policy =>
+        policy.RequireAssertion(context =>
+            AuthorizationPolicies.IsPlatformAdmin(context.User)
+            || (context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.MerchantUser)
+                && AuthorizationPolicies.HasMerchant(context.User))));
+
+    options.AddPolicy(AuthorizationPolicies.CourierOperations, policy =>
+        policy.RequireAssertion(context =>
+            AuthorizationPolicies.IsPlatformAdmin(context.User)
+            || (context.User.IsInRole(Autonomy.Persistence.Identity.AuthorizationRoles.Courier)
+                && AuthorizationPolicies.HasTenant(context.User))));
+});
+
+var frontendOrigin = builder.Configuration["Cors:FrontendOrigin"];
+if (!string.IsNullOrWhiteSpace(frontendOrigin))
+{
+    builder.Services.AddCors(options =>
+        options.AddDefaultPolicy(policy =>
+            policy.WithOrigins(frontendOrigin)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials()));
+}
 
 var app = builder.Build();
+
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseExceptionHandler();
+app.UseStatusCodePages();
+app.UseMiddleware<RequestTrackingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "Autonomy API v1");
+    });
 }
 
 app.UseHttpsRedirection();
 
-// Middleware sırası önemlidir.
+if (!string.IsNullOrWhiteSpace(frontendOrigin))
+{
+    app.UseCors();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild",
-    "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast(
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        )).ToArray();
-
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
-// Test amaçlı korumalı endpoint
-app.MapGet("/api/v1/test-auth", () =>
-    Results.Ok(new { Message = "Authenticated successfully." }))
-    .RequireAuthorization();
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
