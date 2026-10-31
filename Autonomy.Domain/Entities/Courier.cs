@@ -32,4 +32,28 @@ public class Courier : BaseEntity
     public int ActiveDeliveryCount { get; set; }
 
     public int MaxSimultaneousDeliveries { get; set; } = 1;
+
+    public void GoOnline(DateTime lastSeenAt)
+    {
+        OnlineStatus = CourierOnlineStatus.Online;
+        LastConnectionAt = lastSeenAt;
+    }
+
+    public void GoOffline(DateTime lastSeenAt)
+    {
+        OnlineStatus = CourierOnlineStatus.Offline;
+        LastConnectionAt = lastSeenAt;
+    }
+
+    public void SetAvailable(DateTime lastSeenAt)
+    {
+        AvailabilityStatus = CourierAvailabilityStatus.Available;
+        LastConnectionAt = lastSeenAt;
+    }
+
+    public void SetUnavailable(DateTime lastSeenAt)
+    {
+        AvailabilityStatus = CourierAvailabilityStatus.Unavailable;
+        LastConnectionAt = lastSeenAt;
+    }
 }

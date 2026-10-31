@@ -13,6 +13,10 @@ public interface ICourierRepository : IGenericRepository<Courier>
         Guid fleetId,
         CancellationToken cancellationToken = default);
 
+    Task<Courier> SaveStateAsync(
+        Courier courier,
+        CancellationToken cancellationToken = default);
+
     Task<bool> DeleteByIdInFleetAsync(
         Guid id,
         Guid fleetId,

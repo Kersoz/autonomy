@@ -33,6 +33,14 @@ public class CourierRepository : GenericRepository<Courier>, ICourierRepository
                 cancellationToken);
     }
 
+    public async Task<Courier> SaveStateAsync(
+        Courier courier,
+        CancellationToken cancellationToken = default)
+    {
+        await Context.SaveChangesAsync(cancellationToken);
+        return courier;
+    }
+
     public async Task<bool> DeleteByIdInFleetAsync(
         Guid id,
         Guid fleetId,

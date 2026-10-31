@@ -237,6 +237,22 @@ public sealed class AssignmentApplicationService(
             throw new AssignmentConflictException("The courier is disabled.");
         }
 
+        if (courier.OnlineStatus != CourierOnlineStatus.Online)
+        {
+            throw new AssignmentConflictException("The courier is offline.");
+        }
+
+        if (courier.AvailabilityStatus != CourierAvailabilityStatus.Available)
+        {
+            throw new AssignmentConflictException("The courier is unavailable.");
+        }
+
+        if (courier.ActiveDeliveryCount >= courier.MaxSimultaneousDeliveries)
+        {
+            throw new AssignmentConflictException(
+                "The courier has reached concurrent assignment capacity.");
+        }
+
         return (delivery, courier);
     }
 

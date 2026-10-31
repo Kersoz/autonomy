@@ -9,8 +9,6 @@ public sealed class UpdateCourierDtoValidator : AbstractValidator<UpdateCourierD
     {
         RuleFor(request => request.Name).NotEmpty().MaximumLength(200);
         RuleFor(request => request.ContactPhone).NotEmpty().MaximumLength(32);
-        RuleFor(request => request.OnlineStatus).IsInEnum();
-        RuleFor(request => request.AvailabilityStatus).IsInEnum();
         RuleFor(request => request.VehicleType).MaximumLength(100);
         RuleFor(request => request.VehiclePlate).MaximumLength(32);
         RuleFor(request => request.MaxSimultaneousDeliveries)

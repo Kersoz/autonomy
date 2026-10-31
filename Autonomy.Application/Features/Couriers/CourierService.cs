@@ -10,11 +10,16 @@ public class CourierService : ICourierService
 {
     private readonly ICourierRepository _courierRepository;
     private readonly IMapper _mapper;
+    private readonly ITenantContext _tenantContext;
 
-    public CourierService(ICourierRepository courierRepository, IMapper mapper)
+    public CourierService(
+        ICourierRepository courierRepository,
+        IMapper mapper,
+        ITenantContext tenantContext)
     {
         _courierRepository = courierRepository;
         _mapper = mapper;
+        _tenantContext = tenantContext;
     }
 
     public async Task<IReadOnlyList<CourierDto>> GetAllAsync(
@@ -71,6 +76,57 @@ public class CourierService : ICourierService
         entity.UpdatedAt = DateTime.UtcNow;
 
         var updatedCourier = await _courierRepository.UpdateAsync(entity, cancellationToken);
+        return _mapper.Map<CourierDto>(updatedCourier);
+    }
+
+    public Task<CourierDto?> GoOnlineAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return UpdateStateAsync(id, courier => courier.GoOnline(DateTime.UtcNow), cancellationToken);
+    }
+
+    public Task<CourierDto?> GoOfflineAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return UpdateStateAsync(id, courier => courier.GoOffline(DateTime.UtcNow), cancellationToken);
+    }
+
+    public Task<CourierDto?> SetAvailableAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return UpdateStateAsync(id, courier => courier.SetAvailable(DateTime.UtcNow), cancellationToken);
+    }
+
+    public Task<CourierDto?> SetUnavailableAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        return UpdateStateAsync(id, courier => courier.SetUnavailable(DateTime.UtcNow), cancellationToken);
+    }
+
+    private async Task<CourierDto?> UpdateStateAsync(
+        Guid id,
+        Action<Courier> transition,
+        CancellationToken cancellationToken)
+    {
+        var courier = await _courierRepository.GetByIdAsync(id, cancellationToken);
+        if (courier is null)
+        {
+            return null;
+        }
+
+        if (!_tenantContext.IsPlatformAdmin
+            && (_tenantContext.UserId is not Guid userId || courier.UserId != userId))
+        {
+            throw new UnauthorizedAccessException(
+                "Only the courier can update their own state.");
+        }
+
+        transition(courier);
+        var updatedCourier = await _courierRepository.SaveStateAsync(courier, cancellationToken);
         return _mapper.Map<CourierDto>(updatedCourier);
     }
 

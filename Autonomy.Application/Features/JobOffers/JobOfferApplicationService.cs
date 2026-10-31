@@ -41,10 +41,7 @@ public sealed class JobOfferApplicationService(
                         "The courier was not found in the delivery fleet.");
                 }
 
-                if (!courier.IsEnabled)
-                {
-                    throw new AssignmentConflictException("The courier is disabled.");
-                }
+                ValidateCourierState(courier);
 
                 if (delivery.Status != DeliveryStatus.PendingAssignment
                     || transaction.ActiveAssignment is not null)
@@ -233,9 +230,24 @@ public sealed class JobOfferApplicationService(
                 "The courier does not belong to the delivery fleet.");
         }
 
+        ValidateCourierState(courier);
+    }
+
+    private static void ValidateCourierState(Courier courier)
+    {
         if (!courier.IsEnabled)
         {
             throw new AssignmentConflictException("The courier is disabled.");
+        }
+
+        if (courier.OnlineStatus != CourierOnlineStatus.Online)
+        {
+            throw new AssignmentConflictException("The courier is offline.");
+        }
+
+        if (courier.AvailabilityStatus != CourierAvailabilityStatus.Available)
+        {
+            throw new AssignmentConflictException("The courier is unavailable.");
         }
     }
 
